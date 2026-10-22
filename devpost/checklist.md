@@ -9,7 +9,7 @@ Build mode: learn
 
 ## Slices
 
-- [ ] **1. Paste a claim and get a Groq verdict in chat**
+- [x] **1. Paste a claim and get a Groq verdict in chat**
   Becomes usable: A running Streamlit chat app where a pasted health claim returns `RED|YELLOW|GREEN` plus a two-sentence summary and one citation from the primary Groq path.
   Why now: Proves the unique kernel end-to-end immediately, including UI, prompt path, and structured output.
   PRD ref: `prd.md > The Core Journey`, `prd.md > Claim Input and Submission`, `prd.md > Health Claim Evaluation and Verdict`, `prd.md > Explanation and Citation Output`

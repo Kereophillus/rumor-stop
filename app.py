@@ -9,8 +9,30 @@ st.set_page_config(page_title="Rumor-Stop", page_icon="🛑", layout="centered")
 st.title("Rumor-Stop")
 st.caption("Paste a forwarded health claim to check if it is safe, fake, or unverified.")
 
-if "messages" not in st.session_state:
-    st.session_state.messages: List[Dict[str, str]] = []
+
+def init_session_state() -> None:
+    if "messages" not in st.session_state:
+        st.session_state.messages = []
+
+
+def cleaned_claim_input(raw_claim: str | None) -> str:
+    return (raw_claim or "").strip()
+
+
+def append_user_message(content: str) -> None:
+    st.session_state.messages.append({"role": "user", "content": content})
+
+
+def append_assistant_result(result: Dict[str, str]) -> None:
+    st.session_state.messages.append({"role": "assistant", **result, "content": result["summary"]})
+
+
+def append_assistant_error() -> None:
+    msg = "I could not verify this claim right now. Please try again in a moment."
+    st.session_state.messages.append({"role": "assistant", "content": msg})
+
+
+init_session_state()
 
 
 def render_verdict_card(result: Dict[str, str]) -> None:
@@ -41,26 +63,26 @@ for message in st.session_state.messages:
         else:
             st.write(message["content"])
 
+if not st.session_state.messages:
+    st.info("First use: paste a forwarded health claim to get a quick safety verdict.")
+
 claim = st.chat_input("Paste a suspicious health message here...")
 if claim is not None:
-    if not claim.strip():
+    claim_text = cleaned_claim_input(claim)
+    if not claim_text:
         st.warning("Please paste a health claim before submitting.")
     else:
-        st.session_state.messages.append({"role": "user", "content": claim})
+        append_user_message(claim_text)
         with st.chat_message("user"):
-            st.write(claim)
+            st.write(claim_text)
 
         with st.chat_message("assistant"):
             with st.spinner("Checking medical evidence..."):
                 try:
-                    result = evaluate_claim(claim)
+                    result = evaluate_claim(claim_text)
                     render_verdict_card(result)
-                    st.session_state.messages.append({"role": "assistant", **result, "content": result["summary"]})
-                except FactCheckError as exc:
-                    msg = (
-                        "I could not verify this claim right now. "
-                        "Please try again in a moment with a little more detail."
-                    )
+                    append_assistant_result(result)
+                except FactCheckError:
+                    msg = "I could not verify this claim right now. Please try again in a moment."
                     st.error(msg)
-                    st.caption(str(exc))
-                    st.session_state.messages.append({"role": "assistant", "content": msg})
+                    append_assistant_error()
