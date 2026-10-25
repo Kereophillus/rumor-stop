@@ -19,7 +19,7 @@ Build mode: learn
   Learner check: Paste one forwarded health claim and confirm the output is understandable at a glance, with verdict first.
   Commit: `Build end-to-end Groq fact-check chat slice`
 
-- [ ] **2. Add session chat memory and input/error guards**
+- [x] **2. Add session chat memory and input/error guards**
   Becomes usable: Users can run multiple checks in one session with visible history, while empty input and obvious failures show clear guidance.
   Why now: Stabilizes core day-to-day use and aligns behavior with PRD boundary states before adding multi-provider complexity.
   PRD ref: `prd.md > Session Chat Memory (Non-Persistent)`, `prd.md > States and Boundaries`

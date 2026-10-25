@@ -4,7 +4,8 @@ from pathlib import Path
 from typing import Dict
 from urllib.parse import urlparse
 
-from services.providers.groq_client import GroqClientError, create_completion
+from services.providers.gemini_client import GeminiClientError, create_completion as create_gemini_completion
+from services.providers.groq_client import GroqClientError, create_completion as create_groq_completion
 
 
 PROMPT_PATH = Path(__file__).resolve().parents[1] / "prompts" / "fact_check_prompt.txt"
@@ -60,10 +61,16 @@ def evaluate_claim(claim_text: str) -> Dict[str, str]:
         raise FactCheckError("Claim text is empty.")
 
     prompt = _load_prompt()
+    raw = ""
     try:
-        raw = create_completion(prompt, claim_text)
-    except GroqClientError as exc:
-        raise FactCheckError(str(exc)) from exc
+        raw = create_groq_completion(prompt, claim_text)
+    except GroqClientError as groq_error:
+        try:
+            raw = create_gemini_completion(prompt, claim_text)
+        except GeminiClientError as gemini_error:
+            raise FactCheckError(
+                f"Groq and Gemini failed: {groq_error} | {gemini_error}"
+            ) from gemini_error
 
     parsed = _extract_json(raw)
     if set(parsed.keys()) != REQUIRED_KEYS:
@@ -74,7 +81,6 @@ def evaluate_claim(claim_text: str) -> Dict[str, str]:
         raise FactCheckError("Verdict was missing or invalid.")
 
     label = ALLOWED_VERDICTS[verdict]
-
     summary = str(parsed.get("summary", "")).strip()
     if not summary or not _validate_two_sentences(summary):
         raise FactCheckError("Summary must be exactly two sentences.")
